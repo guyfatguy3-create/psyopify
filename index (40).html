@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>$PSYOPIFY | サイオピファイ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@200;300;400;500;600;700&family=Zen+Kaku+Gothic+New:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-dark: #05050a;
+            --bg-mid: #0a0a12;
+            --bg-card: #0f0f18;
+            --text-primary: #f0f0f5;
+            --text-secondary: #9090a8;
+            --text-muted: #505068;
+            --accent-red: #ff2d55;
+            --accent-red-glow: #ff4d6d;
+            --accent-blue: #00d4ff;
+            --accent-blue-glow: #40e0ff;
+            --accent-gold: #ffd700;
+            --accent-purple: #a855f7;
+        }
+
+        body {
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: 'Zen Kaku Gothic New', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* ===== LOADING SCREEN ===== */
+        #loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-dark);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 1s ease, visibility 1s ease;
+        }
+
+        #loader.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .loader-logo {
+            width: 140px;
+            height: 140px;
+            margin-bottom: 2rem;
+            animation: logoPulse 2s ease-in-out infinite;
+            filter: drop-shadow(0 0 40px rgba(255, 45, 85, 0.6));
+        }
+
+        .loader-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .loader-jp {
+            font-family: 'Noto Serif JP', serif;
+            font-size: 1rem;
+            color: var(--accent-red);
+            letter-spacing: 0.5em;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 20px var(--accent-red);
+        }
+
+        .loader-text {
+            font-family: 'Noto Serif JP', serif;
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 0.3em;
+            color: var(--text-primary);
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+        }
+
+        .loader-bar-container {
+            width: 250px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            margin-top: 2.5rem;
+            position: relative;
+            overflow: hidden;
+            border-radius: 2px;
+        }
+
+        .loader-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent-red), var(--accent-blue));
+            animation: loadingBar 2.5s ease-out forwards;
+            box-shadow: 0 0 20px var(--accent-red);
+            border-radius: 2px;
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        #main-content {
+            display: none;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        #main-content.visible {
+            display: block;
+            opacity: 1;
+        }
+
+        /* ===== FLOATING JAPANESE TEXT ===== */
+        .floating-jp {
+            position: fixed;
+            font-family: 'Noto Serif JP', serif;
+            color: rgba(255, 45, 85, 0.08);
+            font-size: 4rem;
+            writing-mode: vertical-rl;
+            pointer-events: none;
+            z-index: 1;
+            user-select: none;
+        }
+
+        .floating-jp.left {
+            left: 2%;
+            top: 20%;
+            animation: floatText 20s ease-in-out infinite;
+        }
+
+        .floating-jp.right {
+            right: 2%;
+            top: 30%;
+            animation: floatText 25s ease-in-out infinite reverse;
+        }
+
+        /* ===== HERO SECTION ===== */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Animated gradient background */
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 50% 0%, rgba(255, 45, 85, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 0% 50%, rgba(0, 212, 255, 0.1) 0%, transparent 40%),
+                radial-gradient(ellipse at 100% 50%, rgba(168, 85, 247, 0.1) 0%, transparent 40%),
+                radial-gradient(ellipse at 50% 100%, rgba(255, 45, 85, 0.1) 0%, transparent 40%);
+            z-index: 0;
+            animation: bgPulse 10s ease-in-out infinite;
+        }
+
+        /* Particle/star effect */
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: var(--accent-blue);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent-blue), 0 0 20px var(--accent-blue);
+            animation: particleFloat 15s linear infinite;
+            opacity: 0;
+        }
+
+        /* Light streaks like your anime images */
+        .light-streaks {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .streak {
+            position: absolute;
+            width: 2px;
+            height: 100px;
+            background: linear-gradient(to bottom, transparent, var(--accent-gold), transparent);
+            opacity: 0;
+            animation: streakFall 3s linear infinite;
+        }
+
+        /* Red moon glow */
+        .moon-glow {
+            position: absolute;
+            top: 5%;
+            right: 10%;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(255, 45, 85, 0.3) 0%, rgba(255, 45, 85, 0.1) 40%, transparent 70%);
+            border-radius: 50%;
+            z-index: 1;
+            animation: moonPulse 5s ease-in-out infinite;
+            filter: blur(20px);
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+        }
+
+        .hero-jp-top {
+            font-family: 'Noto Serif JP', serif;
+            font-size: 1rem;
+            color: var(--accent-red);
+            letter-spacing: 0.8em;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 30px var(--accent-red);
+            animation: textGlow 3s ease-in-out infinite;
+        }
+
+        .hero-logo {
+            width: clamp(200px, 30vw, 300px);
+            height: auto;
+            margin-bottom: 1.5rem;
+            filter: drop-shadow(0 0 50px rgba(255, 45, 85, 0.5));
+            animation: logoFloat 4s ease-in-out infinite;
+        }
+
+        .hero-title {
+            font-family: 'Noto Serif JP', serif;
+            font-size: clamp(3rem, 10vw, 6rem);
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            text-shadow: 
+                0 0 40px rgba(255, 45, 85, 0.5),
+                0 0 80px rgba(255, 45, 85, 0.3);
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-red-glow) 50%, var(--text-primary) 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: textShine 5s linear infinite;
+        }
+
+        .hero-title .dollar {
+            color: var(--accent-red);
+            -webkit-text-fill-color: var(--accent-red);
+            text-shadow: 0 0 30px var(--accent-red);
+        }
+
+        .hero-tagline {
+            font-family: 'Noto Serif JP', serif;
+            font-size: 1.1rem;
+            font-weight: 300;
+            letter-spacing: 0.4em;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .hero-jp-bottom {
+            font-family: 'Noto Serif JP', serif;
+            font-size: 1.2rem;
+            color: var(--accent-blue);
+            letter-spacing: 0.3em;
+            text-shadow: 0 0 20px var(--accent-blue);
+        }
+
+        /* ===== CTA BUTTONS ===== */
+        .cta-container {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 3rem;
+        }
+
+        .cta-btn {
+            font-family: 'Zen Kaku Gothic New', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 1rem 2.5rem;
+            border: 1px solid var(--accent-red);
+            background: rgba(255, 45, 85, 0.1);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.4s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 45, 85, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .cta-btn:hover::before {
+            left: 100%;
+        }
+
+        .cta-btn:hover {
+            background: rgba(255, 45, 85, 0.3);
+            box-shadow: 0 0 40px rgba(255, 45, 85, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .cta-btn.primary {
+            background: linear-gradient(135deg, var(--accent-red), var(--accent-purple));
+            border: none;
+            box-shadow: 0 0 30px rgba(255, 45, 85, 0.3);
+        }
+
+        .cta-btn.primary:hover {
+            box-shadow: 0 0 50px rgba(255, 45, 85, 0.5);
+        }
+
+        /* ===== INSPIRATION GALLERY ===== */
+        .inspiration-section {
+            padding: 4rem 2rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .section-jp {
+            text-align: center;
+            font-family: 'Noto Serif JP', serif;
+            font-size: 0.8rem;
+            color: var(--accent-red);
+            letter-spacing: 0.5em;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 15px var(--accent-red);
+        }
+
+        .section-title {
+            text-align: center;
+            font-family: 'Noto Serif JP', serif;
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            color: var(--text-primary);
+            margin-bottom: 3rem;
+            letter-spacing: 0.1em;
+        }
+
+        .inspiration-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 768px) {
+            .inspiration-grid {
+                grid-template-columns: 1fr;
+                max-width: 400px;
+            }
+        }
+
+        .inspiration-card {
+            position: relative;
+            aspect-ratio: 1;
+            overflow: hidden;
+            border: 1px solid rgba(255, 45, 85, 0.3);
+            transition: all 0.5s ease;
+        }
+
+        .inspiration-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(255, 45, 85, 0.2) 0%, transparent 50%, rgba(0, 212, 255, 0.2) 100%);
+            z-index: 1;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .inspiration-card:hover::before {
+            opacity: 1;
+        }
+
+        .inspiration-card:hover {
+            border-color: var(--accent-red);
+            box-shadow: 
+                0 0 30px rgba(255, 45, 85, 0.3),
+                inset 0 0 30px rgba(255, 45, 85, 0.1);
+            transform: scale(1.02);
+        }
+
+        .inspiration-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .inspiration-card:hover img {
+            transform: scale(1.1);
+        }
+
+        .inspiration-card .card-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 1rem;
+            background: linear-gradient(to top, rgba(5, 5, 10, 0.95), transparent);
+            font-family: 'Noto Serif JP', serif;
+            font-size: 0.75rem;
+            color: var(--accent-red);
+            letter-spacing: 0.2em;
+            z-index: 2;
+        }
+
+        /* ===== TRANSFORMER SECTION ===== */
+        .transformer-section {
+            padding: 6rem 2rem;
+            position: relative;
+            z-index: 10;
+            background: linear-gradient(180deg, 
+                transparent 0%, 
+                rgba(255, 45, 85, 0.03) 50%,
+                transparent 100%
+            );
+        }
+
+        .transformer-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 1px;
+            height: 100px;
+            background: linear-gradient(to bottom, transparent, var(--accent-red), transparent);
+        }
+
+        .narrative {
+            max-width: 700px;
+            margin: 0 auto 4rem;
+            text-align: center;
+            font-family: 'Zen Kaku Gothic New', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 300;
+            line-height: 2.2;
+            color: var(--text-secondary);
+        }
+
+        .narrative .highlight {
+            color: var(--accent-red);
+            font-weight: 500;
+            text-shadow: 0 0 20px rgba(255, 45, 85, 0.5);
+        }
+
+        .narrative .blue {
+            color: var(--accent-blue);
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+
+        .narrative .gold {
+            color: var(--accent-gold);
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+
+        /* ===== DROP ZONE ===== */
+        .drop-zone-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .drop-zone {
+            border: 2px dashed rgba(255, 45, 85, 0.4);
+            padding: 4rem 2rem;
+            text-align: center;
+            background: rgba(15, 15, 24, 0.8);
+            transition: all 0.4s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .drop-zone::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(255, 45, 85, 0.1), transparent, rgba(0, 212, 255, 0.1), transparent);
+            animation: rotateBg 10s linear infinite;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .drop-zone:hover::before,
+        .drop-zone.dragover::before {
+            opacity: 1;
+        }
+
+        .drop-zone:hover,
+        .drop-zone.dragover {
+            border-color: var(--accent-red);
+            box-shadow: 
+                0 0 50px rgba(255, 45, 85, 0.2),
+                inset 0 0 50px rgba(255, 45, 85, 0.05);
+        }
+
+        .drop-zone-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .drop-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1.5rem;
+        }
+
+        .drop-icon svg {
+            width: 100%;
+            height: 100%;
+            stroke: var(--accent-red);
+            filter: drop-shadow(0 0 10px var(--accent-red));
+        }
+
+        .drop-text {
+            font-family: 'Noto Serif JP', serif;
+            font-size: 1.2rem;
+            font-weight: 400;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.1em;
+        }
+
+        .drop-text-jp {
+            font-family: 'Noto Serif JP', serif;
+            font-size: 0.9rem;
+            color: var(--accent-red);
+            margin-bottom: 1rem;
+            letter-spacing: 0.2em;
+        }
+
+        .drop-subtext {
+            font-size: 0.8rem;
+            font-weight: 300;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+        }
+
+        /* ===== PROCESSING ===== */
+        .processing-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 5, 10, 0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .processing-overlay.visible {
+            display: flex;
+        }
+
+        .processing-spinner {
+            width: 60px;
+            height: 60px;
+            border: 2px solid transparent;
+            border-top-color: var(--accent-red);
+            border-right-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1.5rem;
+        }
+
+        .processing-text {
+            font-family: 'Noto Serif JP', serif;
+            font-size: 1rem;
+            color: var(--text-primary);
+            letter-spacing: 0.2em;
+        }
+
+        .processing-text-jp {
+            font-family: 'Noto Serif JP', serif;
+            font-size: 0.85rem;
+            color: var(--accent-red);
+            margin-top: 0.5rem;
+            letter-spacing: 0.3em;
+        }
+
+        /* ===== PREVIEW ===== */
+        .preview-container {
+            display: none;
+            max-width: 1000px;
+            margin: 4rem auto 0;
+            padding: 0 2rem;
+        }
+
+        .preview-container.visible {
+            display: block;
+            animation: fadeInUp 0.8s ease;
+        }
+
+        .preview-grid {
+            display: grid;
+            grid-template-columns: 1fr 80px 1fr;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        @media (max-width: 768px) {
+            .preview-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            .arrow-container {
+                transform: rotate(90deg);
+            }
+        }
+
+        .preview-box {
+            position: relative;
+            border: 1px solid var(--bg-card);
+            overflow: hidden;
+            background: var(--bg-dark);
+        }
+
+        .preview-box.output {
+            border-color: var(--accent-red);
+            box-shadow: 0 0 30px rgba(255, 45, 85, 0.2);
+        }
+
+        .preview-box img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .preview-label {
+            position: absolute;
+            top: 0;
+            left: 0;
+            font-family: 'Noto Serif JP', serif;
+            font-size: 0.7rem;
+            padding: 0.5rem 1rem;
+            background: rgba(5, 5, 10, 0.9);
+            color: var(--text-muted);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        .preview-box.output .preview-label {
+            color: var(--accent-red);
+            text-shadow: 0 0 10px var(--accent-red);
+        }
+
+        .arrow-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .arrow-container svg {
+            width: 40px;
+            height: 40px;
+            stroke: var(--accent-red);
+            filter: drop-shadow(0 0 10px var(--accent-red));
+            animation: arrowPulse 2s ease-in-out infinite;
+        }
+
+        /* Download button */
+        .download-btn {
+            display: none;
+            margin: 2rem auto 0;
+            font-family: 'Zen Kaku Gothic New', sans-serif;
+            font-size: 0.8rem;
+            padding: 0.8rem 2rem;
+            border: 1px solid var(--accent-blue);
+            background: rgba(0, 212, 255, 0.1);
+            color: var(--accent-blue);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 0.1em;
+        }
+
+        .download-btn.visible {
+            display: block;
+        }
+
+        .download-btn:hover {
+            background: rgba(0, 212, 255, 0.2);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            padding: 4rem 2rem;
+            text-align: center;
+            border-top: 1px solid rgba(255, 45, 85, 0.2);
+            position: relative;
+            z-index: 10;
+        }
+
+        .footer-logo {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 1rem;
+            filter: drop-shadow(0 0 20px rgba(255, 45, 85, 0.5));
+        }
+
+        .footer-jp {
+            font-family: 'Noto Serif JP', serif;
+            font-size: 0.85rem;
+            color: var(--accent-red);
+            letter-spacing: 0.3em;
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-text {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            letter-spacing: 0.1em;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 2.5rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .social-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.8rem;
+            letter-spacing: 0.1em;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .social-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: var(--accent-red);
+            transition: width 0.3s ease;
+        }
+
+        .social-links a:hover {
+            color: var(--accent-red);
+            text-shadow: 0 0 15px var(--accent-red);
+        }
+
+        .social-links a:hover::after {
+            width: 100%;
+        }
+
+        /* ===== ANIMATIONS ===== */
+        @keyframes logoPulse {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 40px rgba(255, 45, 85, 0.6)); }
+            50% { transform: scale(1.05); filter: drop-shadow(0 0 60px rgba(255, 45, 85, 0.8)); }
+        }
+
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        @keyframes loadingBar {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+
+        @keyframes bgPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        @keyframes textGlow {
+            0%, 100% { text-shadow: 0 0 30px var(--accent-red); }
+            50% { text-shadow: 0 0 50px var(--accent-red), 0 0 80px var(--accent-red); }
+        }
+
+        @keyframes textShine {
+            0% { background-position: 200% center; }
+            100% { background-position: -200% center; }
+        }
+
+        @keyframes moonPulse {
+            0%, 100% { opacity: 0.8; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.1); }
+        }
+
+        @keyframes particleFloat {
+            0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) translateX(100px); opacity: 0; }
+        }
+
+        @keyframes streakFall {
+            0% { transform: translateY(-100px) rotate(15deg); opacity: 0; }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.6; }
+            100% { transform: translateY(100vh) rotate(15deg); opacity: 0; }
+        }
+
+        @keyframes floatText {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-30px); }
+        }
+
+        @keyframes rotateBg {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes arrowPulse {
+            0%, 100% { opacity: 0.6; transform: translateX(0); }
+            50% { opacity: 1; transform: translateX(5px); }
+        }
+
+        /* ===== GRAIN OVERLAY ===== */
+        .grain-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9998;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        }
+
+        #anime-canvas { display: none; }
+        #fileInput { display: none; }
+
+        /* Generator styles */
+        .generator-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .generator-box {
+            background: rgba(15, 15, 24, 0.8);
+            border: 1px solid rgba(255, 45, 85, 0.3);
+            padding: 1.5rem;
+        }
+
+        .generator-box textarea {
+            width: 100%;
+            height: 100px;
+            background: rgba(5, 5, 10, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            font-family: 'Zen Kaku Gothic New', sans-serif;
+            font-size: 1rem;
+            padding: 1rem;
+            resize: none;
+            outline: none;
+            margin-bottom: 1rem;
+        }
+
+        .generator-box textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        .generator-box textarea:focus {
+            border-color: var(--accent-red);
+        }
+
+        .generate-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--accent-red), var(--accent-purple));
+            border: none;
+            color: white;
+            font-family: 'Zen Kaku Gothic New', sans-serif;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 0.1em;
+        }
+
+        .generate-btn:hover {
+            box-shadow: 0 0 30px rgba(255, 45, 85, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .result-container {
+            display: none;
+            max-width: 500px;
+            margin: 3rem auto 0;
+            padding: 0 2rem;
+            text-align: center;
+        }
+
+        .result-container.visible {
+            display: block;
+            animation: fadeInUp 0.8s ease;
+        }
+
+        .result-box {
+            position: relative;
+            border: 1px solid var(--accent-red);
+            box-shadow: 0 0 30px rgba(255, 45, 85, 0.2);
+            overflow: hidden;
+        }
+
+        .result-box img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .result-label {
+            position: absolute;
+            top: 0;
+            left: 0;
+            font-family: 'Noto Serif JP', serif;
+            font-size: 0.7rem;
+            padding: 0.5rem 1rem;
+            background: rgba(5, 5, 10, 0.9);
+            color: var(--accent-red);
+            letter-spacing: 0.15em;
+            text-shadow: 0 0 10px var(--accent-red);
+        }
+    </style>
+</head>
+<body>
+    <div class="grain-overlay"></div>
+    <div class="floating-jp left">変革の時</div>
+    <div class="floating-jp right">現実改変</div>
+
+    <!-- LOADING SCREEN -->
+    <div id="loader">
+        <div class="loader-logo"><img src="logo.png" alt="P"></div>
+        <div class="loader-jp">サイオピファイ</div>
+        <div class="loader-text">PSYOPIFY</div>
+        <div class="loader-bar-container"><div class="loader-bar"></div></div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main-content">
+        <section class="hero">
+            <div class="moon-glow"></div>
+            <div class="particles" id="particles"></div>
+            <div class="light-streaks" id="lightStreaks"></div>
+
+            <div class="hero-content">
+                <div class="hero-jp-top">アニメ化する</div>
+                <img src="logo.png" alt="Psyopify" class="hero-logo">
+                <h1 class="hero-title"><span class="dollar">$</span>PSYOPIFY</h1>
+                <p class="hero-tagline">Transform Your Reality</p>
+                <p class="hero-jp-bottom">現実を超越せよ</p>
+                
+                <div class="cta-container">
+                    <button class="cta-btn primary" onclick="document.querySelector('.transformer-section').scrollIntoView({behavior: 'smooth'})">Create Now</button>
+                    <button class="cta-btn">Buy $Psyopify</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Inspiration Gallery -->
+        <section class="inspiration-section">
+            <p class="section-jp">インスピレーション</p>
+            <h2 class="section-title">The Vision</h2>
+            <div class="inspiration-grid">
+                <div class="inspiration-card">
+                    <img src="anime1.png" alt="Anime Style 1">
+                    <div class="card-label">覚醒 · Awakening</div>
+                </div>
+                <div class="inspiration-card">
+                    <img src="anime2.png" alt="Anime Style 2">
+                    <div class="card-label">闘志 · Fighting Spirit</div>
+                </div>
+                <div class="inspiration-card">
+                    <img src="anime3.png" alt="Anime Style 3">
+                    <div class="card-label">超越 · Transcendence</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Transformer Section -->
+        <section class="transformer-section">
+            <p class="section-jp">生成ステーション</p>
+            <h2 class="section-title">Generate Anime Art</h2>
+            
+            <div class="narrative">
+                <span class="highlight">$PsyopAnime</span> ran to <span class="gold">20M</span> and the meta shifted forever.
+                <br><br>
+                Now the power is yours. Generate <span class="blue">anime-styled art</span> from any description.
+                <span class="highlight">Psyopify anything you want.</span>
+            </div>
+
+            <div class="generator-container">
+                <div class="generator-box">
+                    <textarea id="promptInput" placeholder="Describe your anime image... (e.g. warrior with glowing blue eyes standing in the rain at night)"></textarea>
+                    <button class="generate-btn" id="generateBtn">
+                        <span class="btn-text">Generate · 生成</span>
+                        <span class="btn-loading" style="display:none;">Generating...</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="result-container" id="resultContainer">
+                <div class="result-box">
+                    <img id="resultImage" src="" alt="Generated Anime">
+                    <span class="result-label">Generated · 生成済み</span>
+                </div>
+                <button class="download-btn visible" id="downloadBtn">Download · ダウンロード</button>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <img src="logo.png" alt="P" class="footer-logo">
+            <p class="footer-jp">メタが変わった</p>
+            <p class="footer-text">$PSYOPIFY · The Meta Has Shifted · NFA DYOR</p>
+            <div class="social-links">
+                <a href="#">Twitter</a>
+                <a href="#">Telegram</a>
+                <a href="#">Dexscreener</a>
+            </div>
+        </footer>
+    </div>
+
+    <canvas id="anime-canvas"></canvas>
+
+    <script>
+        // Particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 15 + 's';
+                particle.style.animationDuration = (10 + Math.random() * 10) + 's';
+                container.appendChild(particle);
+            }
+        }
+
+        // Light streaks
+        function createStreaks() {
+            const container = document.getElementById('lightStreaks');
+            for (let i = 0; i < 10; i++) {
+                const streak = document.createElement('div');
+                streak.className = 'streak';
+                streak.style.left = Math.random() * 100 + '%';
+                streak.style.animationDelay = Math.random() * 5 + 's';
+                streak.style.animationDuration = (2 + Math.random() * 3) + 's';
+                streak.style.height = (50 + Math.random() * 100) + 'px';
+                container.appendChild(streak);
+            }
+        }
+
+        // Loading
+        window.addEventListener('load', () => {
+            createParticles();
+            createStreaks();
+            setTimeout(() => {
+                document.getElementById('loader').classList.add('hidden');
+                document.getElementById('main-content').classList.add('visible');
+            }, 3000);
+        });
+
+        // Hugging Face Anime Model
+        const HF_TOKEN = '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';
+
+        const generateBtn = document.getElementById('generateBtn');
+        const promptInput = document.getElementById('promptInput');
+        const resultContainer = document.getElementById('resultContainer');
+        const resultImage = document.getElementById('resultImage');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        generateBtn.addEventListener('click', generateImage);
+
+        promptInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                generateImage();
+            }
+        });
+
+        async function generateImage() {
+            const prompt = promptInput.value.trim();
+            if (!prompt) {
+                alert('Please enter a description');
+                return;
+            }
+
+            generateBtn.disabled = true;
+            generateBtn.querySelector('.btn-text').style.display = 'none';
+            generateBtn.querySelector('.btn-loading').style.display = 'inline';
+
+            try {
+                // Using Animagine XL model for high quality anime
+                const response = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://api-inference.huggingface.co/models/cagliostrolab/animagine-xl-3.1'), {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + HF_TOKEN,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        inputs: prompt + ', masterpiece, best quality, detailed anime illustration, dark atmosphere, cinematic lighting, anime style, japanese animation, high detail',
+                        parameters: {
+                            negative_prompt: 'lowres, bad anatomy, bad hands, text, error, missing fingers, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, blurry, 3d, realistic'
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText);
+                }
+
+                const blob = await response.blob();
+                const imageUrl = URL.createObjectURL(blob);
+                
+                resultImage.src = imageUrl;
+                resultContainer.classList.add('visible');
+                
+                downloadBtn.onclick = () => {
+                    const link = document.createElement('a');
+                    link.href = imageUrl;
+                    link.download = 'psyopify-anime.png';
+                    link.click();
+                };
+
+            } catch (error) {
+                console.error('API Error:', error);
+                if (error.message.includes('loading')) {
+                    alert('Model is loading, please wait 20 seconds and try again.');
+                } else {
+                    alert('Error: ' + error.message);
+                }
+            }
+
+            generateBtn.disabled = false;
+            generateBtn.querySelector('.btn-text').style.display = 'inline';
+            generateBtn.querySelector('.btn-loading').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
