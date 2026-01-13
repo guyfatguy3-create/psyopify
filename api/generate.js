@@ -24,7 +24,7 @@ export default async function handler(req) {
 
     if (type === 'text-to-image') {
       response = await fetch(
-        'https://router.huggingface.co/hf-inference/models/cagliostrolab/animagine-xl-3.1',
+        'https://api-inference.huggingface.co/models/Linaqruf/animagine-xl',
         {
           method: 'POST',
           headers: {
@@ -32,25 +32,19 @@ export default async function handler(req) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            inputs: prompt + ', masterpiece, best quality, detailed anime illustration, dark atmosphere, cinematic lighting, anime style, japanese animation, high detail',
-            parameters: {
-              negative_prompt: 'lowres, bad anatomy, bad hands, text, error, missing fingers, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, blurry, 3d, realistic',
-            },
+            inputs: prompt + ', anime style, high quality, detailed',
           }),
         }
       );
     } else if (type === 'image-to-anime') {
       response = await fetch(
-        'https://router.huggingface.co/hf-inference/models/instruction-tuning-sd/cartoonizer',
+        'https://api-inference.huggingface.co/models/lllyasviel/sd-controlnet-canny',
         {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${HF_TOKEN}`,
-            'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            inputs: image,
-          }),
+          body: image,
         }
       );
     } else {
@@ -62,14 +56,21 @@ export default async function handler(req) {
 
     if (!response.ok) {
       const errorText = await response.text();
+      
+      if (errorText.includes('loading')) {
+        return new Response(JSON.stringify({ error: 'Model is loading, please try again in 20 seconds' }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      
       return new Response(JSON.stringify({ error: errorText }), {
         status: response.status,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    const imageBlob = await response.blob();
-    const arrayBuffer = await imageBlob.arrayBuffer();
+    const arrayBuffer = await response.arrayBuffer();
     const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
 
     return new Response(JSON.stringify({ image: `data:image/png;base64,${base64}` }), {
