@@ -113,6 +113,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: "Missing image" });
       }
 
+      // Use ptran1203/pytorch-animegan with verified version hash
       const createResp = await fetch("https://api.replicate.com/v1/predictions", {
         method: "POST",
         headers: {
@@ -120,9 +121,9 @@ export default async function handler(req, res) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          version: "a3e049f3ad0fe0d28ad24fa30aac2e5da595dd3f266899510c2691b16fd135b7",
+          version: "7d44f1878a07e7b5a32af9727c1f6120cac04203d48f3f7b0432e28fa8e5c6b6",
           input: {
-            image: image,
+            input_image: image,
             model: "Hayao",
           },
         }),
@@ -149,7 +150,7 @@ export default async function handler(req, res) {
       }
 
       if (prediction.status !== "succeeded") {
-        return res.status(500).json({ error: "Failed" });
+        return res.status(500).json({ error: "Failed", raw: prediction });
       }
 
       return res.status(200).json({ image: prediction.output });
