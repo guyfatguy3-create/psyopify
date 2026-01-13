@@ -1,4 +1,4 @@
-export const config = { runtime: "nodejs" };
+export const config = { runtime: "nodejs", maxDuration: 60 };
 
 // Convert natural language to Danbooru-style tags
 function convertToTags(prompt) {
@@ -125,16 +125,80 @@ export default async function handler(req, res) {
     }
 
     const body = req.body || {};
+    const type = body.type || "text-to-image";
     const rawPrompt = (body.prompt || "").trim();
+    const image = body.image || null;
 
+    // IMAGE TO ANIME
+    if (type === "image-to-anime") {
+      if (!image) {
+        return res.status(400).json({ error: "Missing image" });
+      }
+
+      // Use AnimeGANv2 for image-to-anime
+      const createResp = await fetch("https://api.replicate.com/v1/predictions", {
+        method: "POST",
+        headers: {
+          Authorization: `Token ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          version: "a3e049f3ad0fe0d28ad24fa30aac2e5da595dd3f266899510c2691b16fd135b7",
+          input: {
+            image: image,
+            model: "Hayao",
+          },
+        }),
+      });
+
+      const createText = await createResp.text();
+      let createJson;
+      try {
+        createJson = JSON.parse(createText);
+      } catch {
+        return res.status(500).json({ error: "Replicate returned non-JSON", raw: createText.slice(0, 300) });
+      }
+
+      if (!createResp.ok) {
+        return res.status(createResp.status).json({
+          error: createJson?.detail || createJson?.error || "Replicate failed",
+          raw: createJson,
+        });
+      }
+
+      // Poll for result
+      let prediction = createJson;
+      const getUrl = prediction?.urls?.get;
+      if (!getUrl) {
+        return res.status(500).json({ error: "No polling URL", raw: prediction });
+      }
+
+      const start = Date.now();
+      while (prediction.status === "starting" || prediction.status === "processing") {
+        if (Date.now() - start > 60000) {
+          return res.status(504).json({ error: "Timeout" });
+        }
+        await new Promise((r) => setTimeout(r, 1000));
+        const pollResp = await fetch(getUrl, {
+          headers: { Authorization: `Token ${token}` },
+        });
+        prediction = await pollResp.json();
+      }
+
+      if (prediction.status !== "succeeded") {
+        return res.status(500).json({ error: "Failed", raw: prediction });
+      }
+
+      return res.status(200).json({ image: prediction.output });
+    }
+
+    // TEXT TO ANIME
     if (!rawPrompt) {
       return res.status(400).json({ error: "Missing prompt" });
     }
 
-    // Convert natural language to tags
     const prompt = convertToTags(rawPrompt);
 
-    // Create prediction using Animagine XL 4.0
     const createResp = await fetch("https://api.replicate.com/v1/predictions", {
       method: "POST",
       headers: {
@@ -145,10 +209,10 @@ export default async function handler(req, res) {
         version: "057e2276ac5dcd8d1575dc37b131f903df9c10c41aed53d47cd7d4f068c19fa5",
         input: {
           prompt: prompt,
-          negative_prompt: "lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry, artist name, bad-hands-5, nsfw, nude, naked",
-          width: 1024,
-          height: 1024,
-          num_inference_steps: 28,
+          negative_prompt: "lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry, artist name",
+          width: 512,
+          height: 512,
+          num_inference_steps: 20,
           guidance_scale: 7,
           num_outputs: 1,
         },
@@ -165,53 +229,31 @@ export default async function handler(req, res) {
 
     if (!createResp.ok) {
       return res.status(createResp.status).json({
-        error: createJson?.detail || createJson?.error || "Replicate create prediction failed",
+        error: createJson?.detail || createJson?.error || "Replicate failed",
         raw: createJson,
       });
     }
 
-    // Poll until done
     let prediction = createJson;
     const getUrl = prediction?.urls?.get;
     if (!getUrl) {
-      return res.status(500).json({ error: "Replicate did not return a polling URL", raw: prediction });
+      return res.status(500).json({ error: "No polling URL", raw: prediction });
     }
 
     const start = Date.now();
-    const timeoutMs = 120000;
-
-    while (
-      prediction.status === "starting" ||
-      prediction.status === "processing"
-    ) {
-      if (Date.now() - start > timeoutMs) {
-        return res.status(504).json({ error: "Timed out waiting for Replicate", raw: prediction });
+    while (prediction.status === "starting" || prediction.status === "processing") {
+      if (Date.now() - start > 60000) {
+        return res.status(504).json({ error: "Timeout" });
       }
-
-      await new Promise((r) => setTimeout(r, 1500));
-
+      await new Promise((r) => setTimeout(r, 1000));
       const pollResp = await fetch(getUrl, {
         headers: { Authorization: `Token ${token}` },
       });
-
-      const pollText = await pollResp.text();
-      try {
-        prediction = JSON.parse(pollText);
-      } catch {
-        return res.status(500).json({ error: "Replicate poll returned non-JSON", raw: pollText.slice(0, 300) });
-      }
-
-      if (!pollResp.ok) {
-        return res.status(pollResp.status).json({ error: "Replicate poll failed", raw: prediction });
-      }
+      prediction = await pollResp.json();
     }
 
     if (prediction.status !== "succeeded") {
-      return res.status(500).json({
-        error: "Replicate prediction failed",
-        status: prediction.status,
-        raw: prediction,
-      });
+      return res.status(500).json({ error: "Failed", raw: prediction });
     }
 
     const out = prediction.output;
