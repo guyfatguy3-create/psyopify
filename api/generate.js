@@ -18,7 +18,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Missing prompt" });
     }
 
-    // 1) Create a prediction
+    // Create a prediction using version hash
     const createResp = await fetch("https://api.replicate.com/v1/predictions", {
       method: "POST",
       headers: {
@@ -26,9 +26,13 @@ export default async function handler(req, res) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "black-forest-labs/flux-schnell",
+        version: "5599ed30703defd1d160a25a63321b4dec97101d98b4674bcc56e41f62f35637",
         input: {
-          prompt: `${prompt}, anime style, dark cinematic lighting, highly detailed`,
+          prompt: `${prompt}, anime style, dark cinematic lighting, highly detailed, japanese animation`,
+          num_outputs: 1,
+          aspect_ratio: "1:1",
+          output_format: "webp",
+          output_quality: 80,
         },
       }),
     });
@@ -48,7 +52,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // 2) Poll until done
+    // Poll until done
     let prediction = createJson;
     const getUrl = prediction?.urls?.get;
     if (!getUrl) {
