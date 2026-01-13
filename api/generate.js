@@ -1,127 +1,102 @@
-export const config = {
-  runtime: 'edge',
-  maxDuration: 60,
-};
+export const config = { runtime: "nodejs" };
 
-export default async function handler(req) {
-  if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 });
-  }
-
-  const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
-
-  if (!REPLICATE_API_TOKEN) {
-    return new Response(JSON.stringify({ error: 'API token not configured' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
+export default async function handler(req, res) {
   try {
-    const body = await req.json();
-    const { type, prompt, image } = body;
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method not allowed" });
+    }
 
-    let response;
+    const token = process.env.REPLICATE_API_TOKEN;
+    if (!token) {
+      return res.status(500).json({ error: "Missing REPLICATE_API_TOKEN in Vercel env vars" });
+    }
 
-    if (type === 'text-to-image') {
-      response = await fetch('https://api.replicate.com/v1/models/cjwbw/anything-v4.0/predictions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${REPLICATE_API_TOKEN}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'wait',
+    const body = req.body || {};
+    const prompt = (body.prompt || "").trim();
+
+    if (!prompt) {
+      return res.status(400).json({ error: "Missing prompt" });
+    }
+
+    // 1) Create a prediction
+    const createResp = await fetch("https://api.replicate.com/v1/predictions", {
+      method: "POST",
+      headers: {
+        Authorization: `Token ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "black-forest-labs/flux-schnell",
+        input: {
+          prompt: `${prompt}, anime style, dark cinematic lighting, highly detailed`,
         },
-        body: JSON.stringify({
-          input: {
-            prompt: prompt + ', anime style, masterpiece, best quality, detailed anime illustration, cinematic lighting',
-            negative_prompt: 'lowres, bad anatomy, bad hands, text, error, cropped, worst quality, low quality, jpeg artifacts, ugly, blurry, realistic, 3d',
-            width: 512,
-            height: 512,
-          },
-        }),
-      });
-    } else if (type === 'image-to-anime') {
-      response = await fetch('https://api.replicate.com/v1/models/cjwbw/animeganv2/predictions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${REPLICATE_API_TOKEN}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'wait',
-        },
-        body: JSON.stringify({
-          input: {
-            image: image,
-          },
-        }),
-      });
-    } else {
-      return new Response(JSON.stringify({ error: 'Invalid type' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    const result = await response.json();
-
-    if (result.error) {
-      return new Response(JSON.stringify({ error: result.error }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    // If prediction completed immediately (with Prefer: wait)
-    if (result.output) {
-      const imageUrl = Array.isArray(result.output) ? result.output[0] : result.output;
-      return new Response(JSON.stringify({ image: imageUrl }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    // If still processing, poll for result
-    let prediction = result;
-    let attempts = 0;
-    const maxAttempts = 60;
-
-    while (prediction.status !== 'succeeded' && prediction.status !== 'failed' && attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const pollResponse = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
-        headers: {
-          'Authorization': `Bearer ${REPLICATE_API_TOKEN}`,
-        },
-      });
-      
-      prediction = await pollResponse.json();
-      attempts++;
-    }
-
-    if (prediction.status === 'failed') {
-      return new Response(JSON.stringify({ error: prediction.error || 'Generation failed' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    if (prediction.status !== 'succeeded') {
-      return new Response(JSON.stringify({ error: 'Generation timed out' }), {
-        status: 504,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    const imageUrl = Array.isArray(prediction.output) ? prediction.output[0] : prediction.output;
-
-    return new Response(JSON.stringify({ image: imageUrl }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      }),
     });
 
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    const createText = await createResp.text();
+    let createJson;
+    try {
+      createJson = JSON.parse(createText);
+    } catch {
+      return res.status(500).json({ error: "Replicate returned non-JSON", raw: createText.slice(0, 300) });
+    }
+
+    if (!createResp.ok) {
+      return res.status(createResp.status).json({
+        error: createJson?.detail || createJson?.error || "Replicate create prediction failed",
+        raw: createJson,
+      });
+    }
+
+    // 2) Poll until done
+    let prediction = createJson;
+    const getUrl = prediction?.urls?.get;
+    if (!getUrl) {
+      return res.status(500).json({ error: "Replicate did not return a polling URL", raw: prediction });
+    }
+
+    const start = Date.now();
+    const timeoutMs = 120000;
+
+    while (
+      prediction.status === "starting" ||
+      prediction.status === "processing"
+    ) {
+      if (Date.now() - start > timeoutMs) {
+        return res.status(504).json({ error: "Timed out waiting for Replicate", raw: prediction });
+      }
+
+      await new Promise((r) => setTimeout(r, 1200));
+
+      const pollResp = await fetch(getUrl, {
+        headers: { Authorization: `Token ${token}` },
+      });
+
+      const pollText = await pollResp.text();
+      try {
+        prediction = JSON.parse(pollText);
+      } catch {
+        return res.status(500).json({ error: "Replicate poll returned non-JSON", raw: pollText.slice(0, 300) });
+      }
+
+      if (!pollResp.ok) {
+        return res.status(pollResp.status).json({ error: "Replicate poll failed", raw: prediction });
+      }
+    }
+
+    if (prediction.status !== "succeeded") {
+      return res.status(500).json({
+        error: "Replicate prediction failed",
+        status: prediction.status,
+        raw: prediction,
+      });
+    }
+
+    const out = prediction.output;
+    const imageUrl = Array.isArray(out) ? out[0] : out;
+
+    return res.status(200).json({ image: imageUrl });
+  } catch (e) {
+    return res.status(500).json({ error: e?.message || "Server error" });
   }
 }
