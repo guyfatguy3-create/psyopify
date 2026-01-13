@@ -24,12 +24,12 @@ export default async function handler(req) {
     let response;
 
     if (type === 'text-to-image') {
-      // Using Anything V4 anime model
       response = await fetch('https://api.replicate.com/v1/models/cjwbw/anything-v4.0/predictions', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${REPLICATE_API_TOKEN}`,
           'Content-Type': 'application/json',
+          'Prefer': 'wait',
         },
         body: JSON.stringify({
           input: {
@@ -41,12 +41,12 @@ export default async function handler(req) {
         }),
       });
     } else if (type === 'image-to-anime') {
-      // Using AnimeGAN for image to anime
       response = await fetch('https://api.replicate.com/v1/models/cjwbw/animeganv2/predictions', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${REPLICATE_API_TOKEN}`,
           'Content-Type': 'application/json',
+          'Prefer': 'wait',
         },
         body: JSON.stringify({
           input: {
@@ -61,48 +61,57 @@ export default async function handler(req) {
       });
     }
 
-    const prediction = await response.json();
+    const result = await response.json();
 
-    if (prediction.error) {
-      return new Response(JSON.stringify({ error: prediction.error }), {
+    if (result.error) {
+      return new Response(JSON.stringify({ error: result.error }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    // Poll for result
-    let result = prediction;
+    // If prediction completed immediately (with Prefer: wait)
+    if (result.output) {
+      const imageUrl = Array.isArray(result.output) ? result.output[0] : result.output;
+      return new Response(JSON.stringify({ image: imageUrl }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // If still processing, poll for result
+    let prediction = result;
     let attempts = 0;
     const maxAttempts = 60;
 
-    while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < maxAttempts) {
+    while (prediction.status !== 'succeeded' && prediction.status !== 'failed' && attempts < maxAttempts) {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const pollResponse = await fetch(result.urls.get, {
+      const pollResponse = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
         headers: {
           'Authorization': `Bearer ${REPLICATE_API_TOKEN}`,
         },
       });
       
-      result = await pollResponse.json();
+      prediction = await pollResponse.json();
       attempts++;
     }
 
-    if (result.status === 'failed') {
-      return new Response(JSON.stringify({ error: result.error || 'Generation failed' }), {
+    if (prediction.status === 'failed') {
+      return new Response(JSON.stringify({ error: prediction.error || 'Generation failed' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    if (result.status !== 'succeeded') {
+    if (prediction.status !== 'succeeded') {
       return new Response(JSON.stringify({ error: 'Generation timed out' }), {
         status: 504,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    const imageUrl = Array.isArray(result.output) ? result.output[0] : result.output;
+    const imageUrl = Array.isArray(prediction.output) ? prediction.output[0] : prediction.output;
 
     return new Response(JSON.stringify({ image: imageUrl }), {
       status: 200,
