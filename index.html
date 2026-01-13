@@ -60,32 +60,28 @@
         .cta-btn:hover { background: rgba(255, 45, 85, 0.3); box-shadow: 0 0 40px rgba(255, 45, 85, 0.4); }
         .cta-btn.primary { background: linear-gradient(135deg, var(--accent-red), var(--accent-purple)); border: none; }
 
-        .hero-main-row { display: flex; align-items: center; justify-content: center; gap: 2rem; margin-bottom: 1.5rem; }
+        .x-logo-link { position: fixed; top: 50%; right: 3%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; justify-content: center; width: 90px; height: 90px; background: linear-gradient(135deg, rgba(255, 45, 85, 0.2), rgba(168, 85, 247, 0.2)); border: 2px solid var(--accent-red); border-radius: 50%; transition: all 0.4s ease; animation: xFloat 3s ease-in-out infinite; z-index: 100; text-decoration: none; }
+        .x-logo-link:hover { background: rgba(255, 45, 85, 0.3); border-color: var(--accent-blue); box-shadow: 0 0 40px rgba(255, 45, 85, 0.5); transform: translateY(-50%) scale(1.1); }
+        .x-logo-icon { width: 40px; height: 40px; fill: white; filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5)); }
+        .x-made-by { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 0.6rem; color: var(--accent-blue); margin-top: 0.3rem; text-shadow: 0 0 10px var(--accent-blue); }
         
-        .ca-bar { background: linear-gradient(135deg, rgba(255, 45, 85, 0.2), rgba(168, 85, 247, 0.2)); border: 2px solid var(--accent-red); padding: 1rem 1.5rem; text-align: center; position: relative; animation: caPulse 2s ease-in-out infinite; }
-        .ca-bar-label { font-family: 'Noto Serif JP', serif; font-size: 1.5rem; font-weight: 700; color: var(--accent-red); text-shadow: 0 0 20px var(--accent-red); letter-spacing: 0.2em; }
-        .ca-bar-text { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 0.7rem; color: var(--accent-gold); letter-spacing: 0.1em; margin-top: 0.3rem; animation: textBlink 1s ease-in-out infinite; }
-        .ca-bar-pulse { position: absolute; top: -5px; right: -5px; width: 12px; height: 12px; background: var(--accent-gold); border-radius: 50%; animation: livePulse 1.5s ease-in-out infinite; }
+        .ca-bar { background: linear-gradient(135deg, rgba(255, 45, 85, 0.2), rgba(168, 85, 247, 0.2)); border: 2px solid var(--accent-red); padding: 0.8rem 1.2rem; text-align: center; position: relative; animation: caPulse 2s ease-in-out infinite; }
+        .ca-bar-label { font-family: 'Noto Serif JP', serif; font-size: 1.2rem; font-weight: 700; color: var(--accent-red); text-shadow: 0 0 20px var(--accent-red); letter-spacing: 0.2em; }
+        .ca-bar-text { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 0.6rem; color: var(--accent-gold); letter-spacing: 0.1em; margin-top: 0.2rem; animation: textBlink 1s ease-in-out infinite; }
+        .ca-bar-pulse { position: absolute; top: -5px; right: -5px; width: 10px; height: 10px; background: var(--accent-gold); border-radius: 50%; animation: livePulse 1.5s ease-in-out infinite; }
         
-        .x-logo-link { display: flex; align-items: center; justify-content: center; width: 80px; height: 80px; background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05)); border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 50%; transition: all 0.4s ease; animation: xFloat 3s ease-in-out infinite; }
-        .x-logo-link:hover { background: rgba(255, 255, 255, 0.2); border-color: var(--accent-blue); box-shadow: 0 0 30px rgba(0, 212, 255, 0.5); transform: scale(1.1); }
-        .x-logo-icon { width: 45px; height: 45px; fill: white; filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5)); }
-        
-        .creator-warning { margin-top: 1.5rem; text-align: center; }
-        .creator-text { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.5rem; }
-        .creator-text a { color: var(--accent-blue); text-decoration: none; transition: all 0.3s ease; }
-        .creator-text a:hover { color: var(--accent-blue); text-shadow: 0 0 15px var(--accent-blue); }
-        .warning-text { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--accent-red); text-shadow: 0 0 20px var(--accent-red); letter-spacing: 0.15em; animation: warningPulse 1.5s ease-in-out infinite; }
+        .warning-text { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--accent-red); text-shadow: 0 0 20px var(--accent-red); letter-spacing: 0.15em; animation: warningPulse 1.5s ease-in-out infinite; margin-top: 1.5rem; }
         
         @keyframes caPulse { 0%, 100% { box-shadow: 0 0 20px rgba(255, 45, 85, 0.3); } 50% { box-shadow: 0 0 40px rgba(255, 45, 85, 0.6), 0 0 60px rgba(255, 215, 0, 0.3); } }
         @keyframes textBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         @keyframes livePulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: 0.5; } }
-        @keyframes xFloat { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-10px) rotate(5deg); } }
+        @keyframes xFloat { 0%, 100% { transform: translateY(-50%); } 50% { transform: translateY(calc(-50% - 10px)); } }
         @keyframes warningPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.02); } }
         
         @media (max-width: 768px) { 
-            .hero-main-row { flex-direction: column; gap: 1.5rem; }
-            .ca-bar { order: -1; }
+            .x-logo-link { top: auto; bottom: 2%; right: 2%; transform: none; width: 70px; height: 70px; }
+            .x-logo-link:hover { transform: scale(1.1); }
+            @keyframes xFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         }
 
         .inspiration-section { padding: 4rem 2rem; position: relative; z-index: 10; }
@@ -194,32 +190,27 @@
             <div class="hero-content">
                 <div class="hero-jp-top">アニメ化する</div>
                 
-                <div class="hero-main-row">
-                    <div class="ca-bar">
-                        <div class="ca-bar-label">CA</div>
-                        <div class="ca-bar-text">BEING ADDED RIGHT NOW</div>
-                        <div class="ca-bar-pulse"></div>
-                    </div>
-                    
-                    <img src="images/logo.png" alt="Psyopify" class="hero-logo">
-                    
-                    <a href="https://x.com/psyopifylol" target="_blank" class="x-logo-link">
-                        <svg viewBox="0 0 24 24" class="x-logo-icon">
-                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                        </svg>
-                    </a>
-                </div>
+                <img src="images/logo.png" alt="Psyopify" class="hero-logo">
+                
+                <a href="https://x.com/psyopifylol" target="_blank" class="x-logo-link">
+                    <svg viewBox="0 0 24 24" class="x-logo-icon">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    </svg>
+                    <span class="x-made-by">@psyopifylol</span>
+                </a>
                 
                 <h1 class="hero-title"><span class="dollar">$</span>PSYOPIFY</h1>
                 <p class="hero-tagline">Transform Your Reality</p>
                 <p class="hero-jp-bottom">現実を超越せよ</p>
                 
-                <div class="creator-warning">
-                    <p class="creator-text">Made by <a href="https://x.com/psyopifylol" target="_blank">@psyopifylol</a></p>
-                    <p class="warning-text">⚠️ DO NOT BUY FAKES ⚠️</p>
-                </div>
+                <p class="warning-text">⚠️ DO NOT BUY FAKES ⚠️</p>
                 
                 <div class="cta-container">
+                    <div class="ca-bar">
+                        <div class="ca-bar-label">CA</div>
+                        <div class="ca-bar-text">BEING ADDED SOON</div>
+                        <div class="ca-bar-pulse"></div>
+                    </div>
                     <button class="cta-btn primary" onclick="document.querySelector('.transformer-section').scrollIntoView({behavior: 'smooth'})">Create Now</button>
                     <button class="cta-btn">Buy $Psyopify</button>
                 </div>
