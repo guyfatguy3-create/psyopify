@@ -18,7 +18,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Missing prompt" });
     }
 
-    // Create a prediction using version hash
+    // Create prediction using Animagine XL 4.0
     const createResp = await fetch("https://api.replicate.com/v1/predictions", {
       method: "POST",
       headers: {
@@ -26,13 +26,15 @@ export default async function handler(req, res) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        version: "5599ed30703defd1d160a25a63321b4dec97101d98b4674bcc56e41f62f35637",
+        version: "057e2276ac5dcd8d1575dc37b131f903df9c10c41aed53d47cd7d4f068c19fa5",
         input: {
-          prompt: `${prompt}, anime style, dark cinematic lighting, highly detailed, japanese animation`,
+          prompt: `masterpiece, best quality, ${prompt}`,
+          negative_prompt: "lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry, artist name, bad-hands-5, bad_prompt_version2",
+          width: 1024,
+          height: 1024,
+          num_inference_steps: 28,
+          guidance_scale: 7,
           num_outputs: 1,
-          aspect_ratio: "1:1",
-          output_format: "webp",
-          output_quality: 80,
         },
       }),
     });
@@ -70,7 +72,7 @@ export default async function handler(req, res) {
         return res.status(504).json({ error: "Timed out waiting for Replicate", raw: prediction });
       }
 
-      await new Promise((r) => setTimeout(r, 1200));
+      await new Promise((r) => setTimeout(r, 1500));
 
       const pollResp = await fetch(getUrl, {
         headers: { Authorization: `Token ${token}` },
