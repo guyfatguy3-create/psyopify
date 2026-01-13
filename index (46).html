@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>$PSYOPIFY | サイオピファイ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@200;300;400;500;600;700&family=Zen+Kaku+Gothic+New:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-dark: #05050a;
+            --bg-mid: #0a0a12;
+            --bg-card: #0f0f18;
+            --text-primary: #f0f0f5;
+            --text-secondary: #9090a8;
+            --text-muted: #505068;
+            --accent-red: #ff2d55;
+            --accent-red-glow: #ff4d6d;
+            --accent-blue: #00d4ff;
+            --accent-gold: #ffd700;
+            --accent-purple: #a855f7;
+        }
+        body { background: var(--bg-dark); color: var(--text-primary); font-family: 'Zen Kaku Gothic New', sans-serif; overflow-x: hidden; min-height: 100vh; }
+        
+        #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dark); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 1s ease, visibility 1s ease; }
+        #loader.hidden { opacity: 0; visibility: hidden; }
+        .loader-logo { width: 140px; height: 140px; margin-bottom: 2rem; animation: logoPulse 2s ease-in-out infinite; filter: drop-shadow(0 0 40px rgba(255, 45, 85, 0.6)); }
+        .loader-logo img { width: 100%; height: 100%; object-fit: contain; }
+        .loader-jp { font-family: 'Noto Serif JP', serif; font-size: 1rem; color: var(--accent-red); letter-spacing: 0.5em; margin-bottom: 0.5rem; text-shadow: 0 0 20px var(--accent-red); }
+        .loader-text { font-family: 'Noto Serif JP', serif; font-size: 2.5rem; font-weight: 300; letter-spacing: 0.3em; color: var(--text-primary); }
+        .loader-bar-container { width: 250px; height: 2px; background: rgba(255,255,255,0.1); margin-top: 2.5rem; position: relative; overflow: hidden; }
+        .loader-bar { position: absolute; top: 0; left: 0; height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent-red), var(--accent-blue)); animation: loadingBar 2.5s ease-out forwards; }
+
+        #main-content { display: none; opacity: 0; transition: opacity 1s ease; }
+        #main-content.visible { display: block; opacity: 1; }
+
+        .floating-jp { position: fixed; font-family: 'Noto Serif JP', serif; color: rgba(255, 45, 85, 0.08); font-size: 4rem; writing-mode: vertical-rl; pointer-events: none; z-index: 1; }
+        .floating-jp.left { left: 2%; top: 20%; animation: floatText 20s ease-in-out infinite; }
+        .floating-jp.right { right: 2%; top: 30%; animation: floatText 25s ease-in-out infinite reverse; }
+
+        .hero { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; position: relative; overflow: hidden; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at 50% 0%, rgba(255, 45, 85, 0.15) 0%, transparent 50%), radial-gradient(ellipse at 0% 50%, rgba(0, 212, 255, 0.1) 0%, transparent 40%), radial-gradient(ellipse at 100% 50%, rgba(168, 85, 247, 0.1) 0%, transparent 40%); z-index: 0; }
+        
+        .particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; overflow: hidden; }
+        .particle { position: absolute; width: 3px; height: 3px; background: var(--accent-blue); border-radius: 50%; box-shadow: 0 0 10px var(--accent-blue); animation: particleFloat 15s linear infinite; opacity: 0; }
+        .light-streaks { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; overflow: hidden; pointer-events: none; }
+        .streak { position: absolute; width: 2px; height: 100px; background: linear-gradient(to bottom, transparent, var(--accent-gold), transparent); opacity: 0; animation: streakFall 3s linear infinite; }
+        .moon-glow { position: absolute; top: 5%; right: 10%; width: 200px; height: 200px; background: radial-gradient(circle, rgba(255, 45, 85, 0.3) 0%, transparent 70%); border-radius: 50%; z-index: 1; animation: moonPulse 5s ease-in-out infinite; filter: blur(20px); }
+
+        .hero-content { position: relative; z-index: 10; text-align: center; }
+        .hero-jp-top { font-family: 'Noto Serif JP', serif; font-size: 1rem; color: var(--accent-red); letter-spacing: 0.8em; margin-bottom: 1rem; text-shadow: 0 0 30px var(--accent-red); }
+        .hero-logo { width: clamp(200px, 30vw, 300px); height: auto; margin-bottom: 1.5rem; filter: drop-shadow(0 0 50px rgba(255, 45, 85, 0.5)); animation: logoFloat 4s ease-in-out infinite; }
+        .hero-title { font-family: 'Noto Serif JP', serif; font-size: clamp(3rem, 10vw, 6rem); font-weight: 600; letter-spacing: 0.1em; background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-red-glow) 50%, var(--text-primary) 100%); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: textShine 5s linear infinite; }
+        .hero-title .dollar { color: var(--accent-red); -webkit-text-fill-color: var(--accent-red); }
+        .hero-tagline { font-family: 'Noto Serif JP', serif; font-size: 1.1rem; letter-spacing: 0.4em; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.5rem; }
+        .hero-jp-bottom { font-family: 'Noto Serif JP', serif; font-size: 1.2rem; color: var(--accent-blue); letter-spacing: 0.3em; text-shadow: 0 0 20px var(--accent-blue); }
+
+        .cta-container { display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap; margin-top: 3rem; }
+        .cta-btn { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 0.85rem; padding: 1rem 2.5rem; border: 1px solid var(--accent-red); background: rgba(255, 45, 85, 0.1); color: var(--text-primary); cursor: pointer; transition: all 0.4s ease; text-transform: uppercase; letter-spacing: 0.15em; }
+        .cta-btn:hover { background: rgba(255, 45, 85, 0.3); box-shadow: 0 0 40px rgba(255, 45, 85, 0.4); }
+        .cta-btn.primary { background: linear-gradient(135deg, var(--accent-red), var(--accent-purple)); border: none; }
+
+        .inspiration-section { padding: 4rem 2rem; position: relative; z-index: 10; }
+        .section-jp { text-align: center; font-family: 'Noto Serif JP', serif; font-size: 0.8rem; color: var(--accent-red); letter-spacing: 0.5em; margin-bottom: 0.5rem; text-shadow: 0 0 15px var(--accent-red); }
+        .section-title { text-align: center; font-family: 'Noto Serif JP', serif; font-size: clamp(1.5rem, 4vw, 2rem); color: var(--text-primary); margin-bottom: 3rem; letter-spacing: 0.1em; }
+        .inspiration-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; max-width: 1000px; margin: 0 auto; }
+        @media (max-width: 768px) { .inspiration-grid { grid-template-columns: 1fr; max-width: 400px; } }
+        .inspiration-card { position: relative; aspect-ratio: 1; overflow: hidden; border: 1px solid rgba(255, 45, 85, 0.3); transition: all 0.5s ease; }
+        .inspiration-card:hover { border-color: var(--accent-red); box-shadow: 0 0 30px rgba(255, 45, 85, 0.3); transform: scale(1.02); }
+        .inspiration-card img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
+        .inspiration-card:hover img { transform: scale(1.1); }
+        .inspiration-card .card-label { position: absolute; bottom: 0; left: 0; right: 0; padding: 1rem; background: linear-gradient(to top, rgba(5, 5, 10, 0.95), transparent); font-family: 'Noto Serif JP', serif; font-size: 0.75rem; color: var(--accent-red); letter-spacing: 0.2em; z-index: 2; }
+
+        .transformer-section { padding: 6rem 2rem; position: relative; z-index: 10; background: linear-gradient(180deg, transparent 0%, rgba(255, 45, 85, 0.03) 50%, transparent 100%); }
+        .narrative { max-width: 700px; margin: 0 auto 3rem; text-align: center; font-size: 1.1rem; line-height: 2.2; color: var(--text-secondary); }
+        .narrative .highlight { color: var(--accent-red); text-shadow: 0 0 20px rgba(255, 45, 85, 0.5); }
+        .narrative .blue { color: var(--accent-blue); }
+        .narrative .gold { color: var(--accent-gold); }
+
+        .mode-tabs { display: flex; justify-content: center; gap: 1rem; margin-bottom: 2rem; }
+        .mode-tab { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 0.85rem; padding: 0.8rem 2rem; border: 1px solid var(--text-muted); background: transparent; color: var(--text-secondary); cursor: pointer; transition: all 0.3s ease; }
+        .mode-tab.active { border-color: var(--accent-red); background: rgba(255, 45, 85, 0.2); color: var(--text-primary); box-shadow: 0 0 20px rgba(255, 45, 85, 0.3); }
+
+        .generator-container { max-width: 600px; margin: 0 auto; padding: 0 2rem; }
+        .text-mode { display: block; }
+        .text-mode.hidden { display: none; }
+        .image-mode { display: none; }
+        .image-mode.active { display: block; }
+
+        .generator-box { background: rgba(15, 15, 24, 0.8); border: 1px solid rgba(255, 45, 85, 0.3); padding: 1.5rem; }
+        .generator-box textarea { width: 100%; height: 100px; background: rgba(5, 5, 10, 0.8); border: 1px solid rgba(255,255,255,0.1); color: var(--text-primary); font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 1rem; padding: 1rem; resize: none; outline: none; margin-bottom: 1rem; }
+        .generator-box textarea::placeholder { color: var(--text-muted); }
+        .generator-box textarea:focus { border-color: var(--accent-red); }
+        .generate-btn { width: 100%; padding: 1rem; background: linear-gradient(135deg, var(--accent-red), var(--accent-purple)); border: none; color: white; font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 1rem; cursor: pointer; transition: all 0.3s ease; }
+        .generate-btn:hover { box-shadow: 0 0 30px rgba(255, 45, 85, 0.5); }
+        .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .drop-zone { border: 2px dashed rgba(255, 45, 85, 0.4); padding: 4rem 2rem; text-align: center; background: rgba(15, 15, 24, 0.8); transition: all 0.4s ease; cursor: pointer; }
+        .drop-zone:hover, .drop-zone.dragover { border-color: var(--accent-red); box-shadow: 0 0 50px rgba(255, 45, 85, 0.2); }
+        .drop-icon { width: 80px; height: 80px; margin: 0 auto 1.5rem; }
+        .drop-icon svg { width: 100%; height: 100%; stroke: var(--accent-red); filter: drop-shadow(0 0 10px var(--accent-red)); }
+        .drop-text { font-family: 'Noto Serif JP', serif; font-size: 1.2rem; color: var(--text-primary); margin-bottom: 0.5rem; }
+        .drop-text-jp { font-family: 'Noto Serif JP', serif; font-size: 0.9rem; color: var(--accent-red); margin-bottom: 1rem; }
+        .drop-subtext { font-size: 0.8rem; color: var(--text-muted); }
+
+        .result-container { display: none; max-width: 500px; margin: 3rem auto 0; padding: 0 2rem; text-align: center; }
+        .result-container.visible { display: block; animation: fadeInUp 0.8s ease; }
+        .result-box { position: relative; border: 1px solid var(--accent-red); box-shadow: 0 0 30px rgba(255, 45, 85, 0.2); overflow: hidden; }
+        .result-box img { width: 100%; height: auto; display: block; }
+        .result-label { position: absolute; top: 0; left: 0; font-family: 'Noto Serif JP', serif; font-size: 0.7rem; padding: 0.5rem 1rem; background: rgba(5, 5, 10, 0.9); color: var(--accent-red); }
+        .download-btn { margin-top: 1.5rem; font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 0.85rem; padding: 0.8rem 2rem; border: 1px solid var(--accent-blue); background: rgba(0, 212, 255, 0.1); color: var(--accent-blue); cursor: pointer; transition: all 0.3s ease; }
+        .download-btn:hover { background: rgba(0, 212, 255, 0.2); box-shadow: 0 0 20px rgba(0, 212, 255, 0.3); }
+
+        .processing-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5, 5, 10, 0.95); display: none; align-items: center; justify-content: center; flex-direction: column; z-index: 9999; }
+        .processing-overlay.visible { display: flex; }
+        .processing-spinner { width: 60px; height: 60px; border: 2px solid transparent; border-top-color: var(--accent-red); border-right-color: var(--accent-blue); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1.5rem; }
+        .processing-text { font-family: 'Noto Serif JP', serif; font-size: 1.2rem; color: var(--text-primary); }
+        .processing-text-jp { font-family: 'Noto Serif JP', serif; font-size: 0.9rem; color: var(--accent-red); margin-top: 0.5rem; }
+
+        .footer { padding: 4rem 2rem; text-align: center; border-top: 1px solid rgba(255, 45, 85, 0.2); position: relative; z-index: 10; }
+        .footer-logo { width: 50px; height: 50px; margin: 0 auto 1rem; filter: drop-shadow(0 0 20px rgba(255, 45, 85, 0.5)); }
+        .footer-jp { font-family: 'Noto Serif JP', serif; font-size: 0.85rem; color: var(--accent-red); letter-spacing: 0.3em; margin-bottom: 0.5rem; }
+        .footer-text { font-size: 0.75rem; color: var(--text-muted); }
+        .social-links { display: flex; gap: 2.5rem; justify-content: center; margin-top: 2rem; }
+        .social-links a { color: var(--text-secondary); text-decoration: none; font-size: 0.8rem; transition: all 0.3s ease; }
+        .social-links a:hover { color: var(--accent-red); text-shadow: 0 0 15px var(--accent-red); }
+
+        @keyframes logoPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        @keyframes logoFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        @keyframes loadingBar { 0% { width: 0%; } 100% { width: 100%; } }
+        @keyframes textShine { 0% { background-position: 200% center; } 100% { background-position: -200% center; } }
+        @keyframes moonPulse { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; } }
+        @keyframes particleFloat { 0% { transform: translateY(100vh); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translateY(-100vh); opacity: 0; } }
+        @keyframes streakFall { 0% { transform: translateY(-100px) rotate(15deg); opacity: 0; } 10% { opacity: 0.6; } 100% { transform: translateY(100vh) rotate(15deg); opacity: 0; } }
+        @keyframes floatText { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-30px); } }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+        .grain-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9998; opacity: 0.03; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E"); }
+        #fileInput { display: none; }
+    </style>
+</head>
+<body>
+    <div class="grain-overlay"></div>
+    <div class="floating-jp left">変革の時</div>
+    <div class="floating-jp right">現実改変</div>
+
+    <div id="loader">
+        <div class="loader-logo"><img src="logo.png" alt="P"></div>
+        <div class="loader-jp">サイオピファイ</div>
+        <div class="loader-text">PSYOPIFY</div>
+        <div class="loader-bar-container"><div class="loader-bar"></div></div>
+    </div>
+
+    <div class="processing-overlay" id="processingOverlay">
+        <div class="processing-spinner"></div>
+        <div class="processing-text">Generating...</div>
+        <div class="processing-text-jp">生成中</div>
+    </div>
+
+    <div id="main-content">
+        <section class="hero">
+            <div class="moon-glow"></div>
+            <div class="particles" id="particles"></div>
+            <div class="light-streaks" id="lightStreaks"></div>
+            <div class="hero-content">
+                <div class="hero-jp-top">アニメ化する</div>
+                <img src="logo.png" alt="Psyopify" class="hero-logo">
+                <h1 class="hero-title"><span class="dollar">$</span>PSYOPIFY</h1>
+                <p class="hero-tagline">Transform Your Reality</p>
+                <p class="hero-jp-bottom">現実を超越せよ</p>
+                <div class="cta-container">
+                    <button class="cta-btn primary" onclick="document.querySelector('.transformer-section').scrollIntoView({behavior: 'smooth'})">Create Now</button>
+                    <button class="cta-btn">Buy $Psyopify</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="inspiration-section">
+            <p class="section-jp">インスピレーション</p>
+            <h2 class="section-title">The Vision</h2>
+            <div class="inspiration-grid">
+                <div class="inspiration-card"><img src="anime1.png" alt="Anime Style 1"><div class="card-label">覚醒 · Awakening</div></div>
+                <div class="inspiration-card"><img src="anime2.png" alt="Anime Style 2"><div class="card-label">闘志 · Fighting Spirit</div></div>
+                <div class="inspiration-card"><img src="anime3.png" alt="Anime Style 3"><div class="card-label">超越 · Transcendence</div></div>
+            </div>
+        </section>
+
+        <section class="transformer-section">
+            <p class="section-jp">生成ステーション</p>
+            <h2 class="section-title">Create Anime Art</h2>
+            <div class="narrative">
+                <span class="highlight">$PsyopAnime</span> ran to <span class="gold">20M</span> and the meta shifted forever.<br><br>
+                Now the power is yours. Create <span class="blue">anime-styled art</span> from text or transform your images.
+                <span class="highlight">Psyopify anything you want.</span>
+            </div>
+
+            <div class="mode-tabs">
+                <button class="mode-tab active" id="textTab">Text to Anime</button>
+                <button class="mode-tab" id="imageTab">Image to Anime</button>
+            </div>
+
+            <div class="generator-container">
+                <div class="text-mode" id="textMode">
+                    <div class="generator-box">
+                        <textarea id="promptInput" placeholder="Describe your anime image... (e.g. dark warrior with glowing blue eyes in the rain at night)"></textarea>
+                        <button class="generate-btn" id="generateTextBtn">Generate · 生成</button>
+                    </div>
+                </div>
+                <div class="image-mode" id="imageMode">
+                    <div class="drop-zone" id="dropZone">
+                        <div class="drop-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                        </div>
+                        <p class="drop-text">Drop Your Image</p>
+                        <p class="drop-text-jp">画像をドロップ</p>
+                        <p class="drop-subtext">PNG, JPG, WEBP supported</p>
+                    </div>
+                    <input type="file" id="fileInput" accept="image/*">
+                </div>
+            </div>
+
+            <div class="result-container" id="resultContainer">
+                <div class="result-box">
+                    <img id="resultImage" src="" alt="Generated">
+                    <span class="result-label">Generated · 生成済み</span>
+                </div>
+                <button class="download-btn" id="downloadBtn">Download · ダウンロード</button>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <img src="logo.png" alt="P" class="footer-logo">
+            <p class="footer-jp">メタが変わった</p>
+            <p class="footer-text">$PSYOPIFY · The Meta Has Shifted · NFA DYOR</p>
+            <div class="social-links">
+                <a href="#">Twitter</a>
+                <a href="#">Telegram</a>
+                <a href="#">Dexscreener</a>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        function createParticles() {
+            const c = document.getElementById('particles');
+            for (let i = 0; i < 30; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                p.style.left = Math.random() * 100 + '%';
+                p.style.animationDelay = Math.random() * 15 + 's';
+                p.style.animationDuration = (10 + Math.random() * 10) + 's';
+                c.appendChild(p);
+            }
+        }
+        function createStreaks() {
+            const c = document.getElementById('lightStreaks');
+            for (let i = 0; i < 10; i++) {
+                const s = document.createElement('div');
+                s.className = 'streak';
+                s.style.left = Math.random() * 100 + '%';
+                s.style.animationDelay = Math.random() * 5 + 's';
+                s.style.animationDuration = (2 + Math.random() * 3) + 's';
+                s.style.height = (50 + Math.random() * 100) + 'px';
+                c.appendChild(s);
+            }
+        }
+        window.addEventListener('load', () => {
+            createParticles();
+            createStreaks();
+            setTimeout(() => {
+                document.getElementById('loader').classList.add('hidden');
+                document.getElementById('main-content').classList.add('visible');
+            }, 3000);
+        });
+
+        const textTab = document.getElementById('textTab');
+        const imageTab = document.getElementById('imageTab');
+        const textMode = document.getElementById('textMode');
+        const imageMode = document.getElementById('imageMode');
+        const generateTextBtn = document.getElementById('generateTextBtn');
+        const promptInput = document.getElementById('promptInput');
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const resultContainer = document.getElementById('resultContainer');
+        const resultImage = document.getElementById('resultImage');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const processingOverlay = document.getElementById('processingOverlay');
+
+        textTab.addEventListener('click', () => {
+            textTab.classList.add('active');
+            imageTab.classList.remove('active');
+            textMode.classList.remove('hidden');
+            imageMode.classList.remove('active');
+        });
+        imageTab.addEventListener('click', () => {
+            imageTab.classList.add('active');
+            textTab.classList.remove('active');
+            imageMode.classList.add('active');
+            textMode.classList.add('hidden');
+        });
+
+        generateTextBtn.addEventListener('click', async () => {
+            const prompt = promptInput.value.trim();
+            if (!prompt) { alert('Please enter a description'); return; }
+            processingOverlay.classList.add('visible');
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: 'text-to-image', prompt })
+                });
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                resultImage.src = data.image;
+                resultContainer.classList.add('visible');
+                downloadBtn.onclick = () => {
+                    const link = document.createElement('a');
+                    link.href = data.image;
+                    link.download = 'psyopify-anime.png';
+                    link.click();
+                };
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+            processingOverlay.classList.remove('visible');
+        });
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files[0]?.type.startsWith('image/')) processImageUpload(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', (e) => { if (e.target.files[0]) processImageUpload(e.target.files[0]); });
+
+        async function processImageUpload(file) {
+            processingOverlay.classList.add('visible');
+            try {
+                const base64 = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.readAsDataURL(file);
+                });
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: 'image-to-anime', image: base64 })
+                });
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                resultImage.src = data.image;
+                resultContainer.classList.add('visible');
+                downloadBtn.onclick = () => {
+                    const link = document.createElement('a');
+                    link.href = data.image;
+                    link.download = 'psyopify-anime.png';
+                    link.click();
+                };
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+            processingOverlay.classList.remove('visible');
+        }
+    </script>
+</body>
+</html>
