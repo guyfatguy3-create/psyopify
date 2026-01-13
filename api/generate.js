@@ -5,21 +5,18 @@ function convertToTags(prompt) {
   let tags = [];
   const p = prompt.toLowerCase();
   
-  // Gender
   if (p.includes('girl') || p.includes('woman') || p.includes('female')) {
     tags.push('1girl', 'solo');
   } else if (p.includes('boy') || p.includes('man') || p.includes('male')) {
     tags.push('1boy', 'solo');
   }
   
-  // Skin tone
   if (p.includes('black') || p.includes('dark skin') || p.includes('dark-skin') || p.includes('african')) {
     tags.push('dark skin', 'dark-skinned female');
   } else if (p.includes('tan') || p.includes('tanned')) {
     tags.push('tan', 'tanned');
   }
   
-  // Body type
   if (p.includes('fat') || p.includes('chubby') || p.includes('thick') || p.includes('bbw') || p.includes('plump')) {
     tags.push('chubby', 'plump', 'thick thighs', 'wide hips', 'curvy');
   } else if (p.includes('muscular') || p.includes('buff')) {
@@ -28,7 +25,6 @@ function convertToTags(prompt) {
     tags.push('slim', 'petite');
   }
   
-  // Sexy/attractive
   if (p.includes('sexy') || p.includes('hot') || p.includes('attractive')) {
     tags.push('sexy', 'alluring');
   }
@@ -36,7 +32,6 @@ function convertToTags(prompt) {
     tags.push('cute', 'kawaii');
   }
   
-  // Hair colors
   if (p.includes('blonde') || p.includes('blond')) tags.push('blonde hair');
   else if (p.includes('black hair')) tags.push('black hair');
   else if (p.includes('white hair')) tags.push('white hair');
@@ -47,42 +42,35 @@ function convertToTags(prompt) {
   else if (p.includes('brown hair')) tags.push('brown hair');
   else if (p.includes('green hair')) tags.push('green hair');
   
-  // Hair length
   if (p.includes('long hair')) tags.push('long hair');
   else if (p.includes('short hair')) tags.push('short hair');
   
-  // Eye colors
   if (p.includes('blue eyes')) tags.push('blue eyes');
   else if (p.includes('red eyes')) tags.push('red eyes');
   else if (p.includes('green eyes')) tags.push('green eyes');
   else if (p.includes('brown eyes')) tags.push('brown eyes');
   else if (p.includes('golden eyes')) tags.push('golden eyes');
   
-  // Actions/poses
   if (p.includes('flying')) tags.push('flying', 'floating', 'sky', 'clouds');
   if (p.includes('sitting')) tags.push('sitting');
   if (p.includes('standing')) tags.push('standing');
   if (p.includes('fighting') || p.includes('battle')) tags.push('fighting stance', 'action');
   if (p.includes('smiling') || p.includes('smile')) tags.push('smile');
   
-  // Settings
   if (p.includes('beach')) tags.push('beach', 'ocean', 'summer');
   if (p.includes('forest')) tags.push('forest', 'nature');
   if (p.includes('city')) tags.push('city', 'cityscape');
   if (p.includes('night')) tags.push('night', 'night sky');
   if (p.includes('rain')) tags.push('rain');
   
-  // Animals
   if (p.includes('cat')) tags.push('cat', 'animal focus');
   if (p.includes('dog')) tags.push('dog', 'animal focus');
   
-  // Styles
   if (p.includes('cyberpunk')) tags.push('cyberpunk', 'neon');
   if (p.includes('fantasy')) tags.push('fantasy', 'magic');
   if (p.includes('demon')) tags.push('demon girl', 'horns');
   if (p.includes('angel')) tags.push('angel', 'wings', 'halo');
   
-  // If no tags, just use prompt
   if (tags.length === 0) {
     return 'masterpiece, best quality, ' + prompt;
   }
@@ -113,7 +101,6 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: "Missing image" });
       }
 
-      // Use ptran1203/pytorch-animegan with verified version hash
       const createResp = await fetch("https://api.replicate.com/v1/predictions", {
         method: "POST",
         headers: {
@@ -123,7 +110,7 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           version: "7d44f1878a07e7b5a32af9727c1f6120cac04203d48f3f7b0432e28fa8e5c6b6",
           input: {
-            input_image: image,
+            image: image,
             model: "Hayao",
           },
         }),
@@ -132,13 +119,13 @@ export default async function handler(req, res) {
       const createJson = await createResp.json();
       
       if (!createResp.ok) {
-        return res.status(createResp.status).json({ error: createJson?.detail || createJson?.error || "Failed" });
+        return res.status(createResp.status).json({ error: createJson?.detail || createJson?.error || "Failed", raw: createJson });
       }
 
       let prediction = createJson;
       const getUrl = prediction?.urls?.get;
       if (!getUrl) {
-        return res.status(500).json({ error: "No polling URL" });
+        return res.status(500).json({ error: "No polling URL", raw: prediction });
       }
 
       const start = Date.now();
